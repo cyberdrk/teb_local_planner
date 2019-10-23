@@ -87,17 +87,17 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
 {
   // check if the plugin is already initialized
   if(!initialized_)
-  {	
+  { 
     // create Node Handle with name of plugin (as used in move_base for loading)
     ros::NodeHandle nh("~/" + name);
-	        
+          
     // get parameters of TebConfig via the nodehandle and override the default config
     cfg_.loadRosParamFromNodeHandle(nh);       
     
     // reserve some memory for obstacles
     obstacles_.reserve(500);
         
-    // create visualization instance	
+    // create visualization instance  
     visualization_ = TebVisualizationPtr(new TebVisualization(nh, cfg_)); 
         
     // create robot footprint/contour model for optimization
@@ -869,14 +869,24 @@ void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega,
 double TebLocalPlannerROS::convertTransRotVelToSteeringAngle(double v, double omega, double wheelbase, double min_turning_radius) const
 {
   if (omega==0 || v==0)
+    std::cout << "omega" << omega << "\n" << std::endl;
     return 0;
-    
+
   double radius = v/omega;
   
   if (fabs(radius) < min_turning_radius)
     radius = double(g2o::sign(radius)) * min_turning_radius; 
 
-  return std::atan(wheelbase / radius);
+  double steering_angle = std::atan(wheelbase / radius);
+
+/*  if (steering_angle < 0.2 && steering_angle >= 0.0)
+    steering_angle = 0.0;
+  
+  if (steering_angle > -0.2 && steering_angle <= 0.0)
+    steering_angle = 0.0;
+
+  std::cout << steering_angle << std::endl;*/
+  return steering_angle;
 }
      
 

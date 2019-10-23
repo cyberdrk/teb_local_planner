@@ -275,7 +275,7 @@ bool TebOptimalPlanner::plan(const tf::Pose& start, const tf::Pose& goal, const 
 }
 
 bool TebOptimalPlanner::plan(const PoseSE2& start, const PoseSE2& goal, const geometry_msgs::Twist* start_vel, bool free_goal_vel)
-{	
+{ 
   ROS_ASSERT_MSG(initialized_, "Call initialize() first.");
   if (!teb_.isInit())
   {
@@ -331,7 +331,7 @@ bool TebOptimalPlanner::buildGraph(double weight_multiplier)
   
   AddEdgesAcceleration();
 
-  AddEdgesTimeOptimal();	
+  AddEdgesTimeOptimal();  
 
   AddEdgesShortestPath();
   
@@ -352,14 +352,14 @@ bool TebOptimalPlanner::optimizeGraph(int no_iterations,bool clear_after)
   {
     ROS_WARN("optimizeGraph(): Robot Max Velocity is smaller than 0.01m/s. Optimizing aborted...");
     if (clear_after) clearGraph();
-    return false;	
+    return false; 
   }
   
   if (!teb_.isInit() || teb_.sizePoses() < cfg_->trajectory.min_samples)
   {
     ROS_WARN("optimizeGraph(): TEB is empty or has too less elements. Skipping optimization.");
     if (clear_after) clearGraph();
-    return false;	
+    return false; 
   }
   
   optimizer_->setVerbose(cfg_->optim.optimization_verbose);
@@ -373,11 +373,11 @@ bool TebOptimalPlanner::optimizeGraph(int no_iterations,bool clear_after)
 
   if(!iter)
   {
-	ROS_ERROR("optimizeGraph(): Optimization failed! iter=%i", iter);
-	return false;
+  ROS_ERROR("optimizeGraph(): Optimization failed! iter=%i", iter);
+  return false;
   }
 
-  if (clear_after) clearGraph();	
+  if (clear_after) clearGraph();  
     
   return true;
 }
@@ -575,7 +575,7 @@ void TebOptimalPlanner::AddEdgesObstaclesLegacy(double weight_multiplier)
     
     // check if obstacle is outside index-range between start and goal
     if ( (index <= 1) || (index > teb_.sizePoses()-2) ) // start and goal are fixed and findNearestBandpoint finds first or last conf if intersection point is outside the range
-	    continue; 
+      continue; 
         
     if (inflated)
     {
@@ -929,7 +929,7 @@ void TebOptimalPlanner::AddEdgesKinematicsDiffDrive()
     kinematics_edge->setInformation(information_kinematics);
     kinematics_edge->setTebConfig(*cfg_);
     optimizer_->addEdge(kinematics_edge);
-  }	 
+  }  
 }
 
 void TebOptimalPlanner::AddEdgesKinematicsCarlike()
@@ -1001,7 +1001,7 @@ void TebOptimalPlanner::computeCurrentCost(double obst_cost_scale, double viapoi
   {
     // here the graph is build again, for time efficiency make sure to call this function 
     // between buildGraph and Optimize (deleted), but it depends on the application
-    buildGraph();	
+    buildGraph(); 
     optimizer_->initializeOptimization();
   }
   else
@@ -1066,6 +1066,7 @@ void TebOptimalPlanner::extractVelocity(const PoseSE2& pose1, const PoseSE2& pos
     Eigen::Vector2d conf1dir( cos(pose1.theta()), sin(pose1.theta()) );
     // translational velocity
     double dir = deltaS.dot(conf1dir);
+    double dist = (double) g2o::sign(dir) * deltaS.norm(); 
     vx = (double) g2o::sign(dir) * deltaS.norm()/dt;
     vy = 0;
   }
@@ -1084,7 +1085,26 @@ void TebOptimalPlanner::extractVelocity(const PoseSE2& pose1, const PoseSE2& pos
   
   // rotational velocity
   double orientdiff = g2o::normalize_theta(pose2.theta() - pose1.theta());
+  std::cout << orientdiff << ":orientdiff" << std::endl;
+
+  if (orientdiff <= 0.0075 && orientdiff >=0.0)
+     orientdiff = 0.0;
+  
+  if (orientdiff >= -0.0075 && orientdiff <= 0.0)
+     orientdiff = 0.0;
+
+  std::cout << orientdiff << ":          orientdiff" << std::endl;
+  std::cout << "deltaS.x():   " << deltaS.x() << std::endl;
+  std::cout << "deltaS.y():   " << deltaS.y() << std::endl;
+  std::cout << "pose1's position:   " << pose1.position() << std::endl;
+  std::cout << "pose2's position:   " << pose2.position() << std::endl;
+  std::cout << " \n" << std::endl; 
+
+  // std::cout << pose1.theta() << ":pose1's theta" << std::endl;
+  // std::cout << pose2.theta() << ":pose2's theta" << std::endl;
+
   omega = orientdiff/dt;
+  // std::cout << omega << ":    omega \n\n\n" << std::endl;
 }
 
 bool TebOptimalPlanner::getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses) const
@@ -1102,14 +1122,14 @@ bool TebOptimalPlanner::getVelocityCommand(double& vx, double& vy, double& omega
   for(int counter = 0; counter < look_ahead_poses; ++counter)
     dt += teb_.TimeDiff(counter);
   if (dt<=0)
-  {	
+  { 
     ROS_ERROR("TebOptimalPlanner::getVelocityCommand() - timediff<=0 is invalid!");
     vx = 0;
     vy = 0;
     omega = 0;
     return false;
   }
-	  
+    
   // Get velocity from the first two configurations
   extractVelocity(teb_.Pose(0), teb_.Pose(look_ahead_poses), dt, vx, vy, omega);
   return true;
