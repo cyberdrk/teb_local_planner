@@ -1087,11 +1087,8 @@ void TebOptimalPlanner::extractVelocity(const PoseSE2& pose1, const PoseSE2& pos
   double orientdiff = g2o::normalize_theta(pose2.theta() - pose1.theta());
   std::cout << orientdiff << ":orientdiff" << std::endl;
 
-  if (orientdiff <= 0.0075 && orientdiff >=0.0)
-     orientdiff = 0.0;
-  
-  if (orientdiff >= -0.0075 && orientdiff <= 0.0)
-     orientdiff = 0.0;
+  /*if (std::abs(orientdiff) <= 0.0075)
+     orientdiff = 0.0;*/
 
   std::cout << orientdiff << ":          orientdiff" << std::endl;
   std::cout << "deltaS.x():   " << deltaS.x() << std::endl;
